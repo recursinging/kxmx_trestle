@@ -7,6 +7,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.SocketAddress;
+import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -192,9 +193,9 @@ public class Trestle implements Runnable {
 								}
 								DatagramPacket p = new DatagramPacket(dgramBuffer, dgramBuffer.length);
 								socket.receive(p);
-								int cnt = 0;
 								serialBuffer[0] = END;
-								for (int i = 1; i < p.getLength(); i++) {
+								int cnt = 1;
+								for (int i = 0; i < p.getLength(); i++) {
 									byte val = p.getData()[i];
 									if (val == END) {
 										serialBuffer[cnt++] = ESC;
@@ -207,9 +208,12 @@ public class Trestle implements Runnable {
 									}
 								}
 								serialBuffer[cnt++] = END;
-//								byte[] test = new byte[cnt];
-//								System.arraycopy(serialBuffer, 0, test, 0, cnt);
-//								System.out.println(Arrays.toString(test));
+								byte[] udpBufferDump = new byte[p.getLength()];
+								System.arraycopy(p.getData(), 0, udpBufferDump, 0, p.getLength());
+								System.out.println(Arrays.toString(udpBufferDump));
+								byte[] serialBufferDump = new byte[cnt];
+								System.arraycopy(serialBuffer, 0, serialBufferDump, 0, cnt);
+								System.out.println(Arrays.toString(serialBufferDump));
 								serial.writeBytes(serialBuffer, cnt);
 								messagesReceived++;
 								bytesReceived += cnt;
