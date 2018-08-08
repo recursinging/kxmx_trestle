@@ -105,7 +105,7 @@
 							</launcher>
 							<compression>2</compression>
 							<stripDebug>true</stripDebug>
-							<outputDirectory>${project.build.directory}/jlink-image/linux</outputDirectory>
+							<outputDirectory>${project.basedir}/dist/linux</outputDirectory>
 						</configuration>
 					</execution>
 					<execution>
@@ -129,7 +129,7 @@
 							</launcher>
 							<compression>2</compression>
 							<stripDebug>true</stripDebug>
-							<outputDirectory>${project.build.directory}/jlink-image/windows</outputDirectory>
+							<outputDirectory>${project.basedir}/dist/windows</outputDirectory>
 						</configuration>
 					</execution>
 				</executions>

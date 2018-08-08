@@ -93,15 +93,16 @@ public class Trestle implements Runnable {
 	public void run() {
 		try {
 			System.out.println("Welcome to Trestle.\n\n");
-			System.out.print("Setting up a (multicast capable) socket at " + udpReceiveHost + ":" + udpReceivePort + "...");
+			System.out.print(
+					"Setting up a (multicast capable) socket at " + udpReceiveHost + ":" + udpReceivePort + "...");
 			SocketAddress receiveSocket = new InetSocketAddress(InetAddress.getByName(udpReceiveHost), udpReceivePort);
 			socket = new MulticastSocket(receiveSocket);
 			System.out.println("OK!\n OSC Messages sent to this socket will be proxied to the serial device.\n");
 
 			System.out.print("Setting up the target UDP address...");
 			SocketAddress targetSocket = new InetSocketAddress(InetAddress.getByName(udpTargetHost), udpTargetPort);
-			System.out.println(
-					"OK!\n OSC Messages from the serial device be proxied to " + udpTargetHost + ":" + udpTargetPort + "\n");
+			System.out.println("OK!\n OSC Messages from the serial device be proxied to " + udpTargetHost + ":"
+					+ udpTargetPort + "\n");
 
 			System.out.println("Setting up the serial device...");
 			while (true) {
@@ -210,10 +211,10 @@ public class Trestle implements Runnable {
 								serialBuffer[cnt++] = END;
 								byte[] udpBufferDump = new byte[p.getLength()];
 								System.arraycopy(p.getData(), 0, udpBufferDump, 0, p.getLength());
-								System.out.println(Arrays.toString(udpBufferDump));
+								//System.out.println(Arrays.toString(udpBufferDump));
 								byte[] serialBufferDump = new byte[cnt];
 								System.arraycopy(serialBuffer, 0, serialBufferDump, 0, cnt);
-								System.out.println(Arrays.toString(serialBufferDump));
+								//System.out.println(Arrays.toString(serialBufferDump));
 								serial.writeBytes(serialBuffer, cnt);
 								messagesReceived++;
 								bytesReceived += cnt;
@@ -228,13 +229,29 @@ public class Trestle implements Runnable {
 
 					executor.execute(() -> {
 						try {
+							long messagesSentLastPeriod = 0;
+							long bytesSentLastPeriod = 0;
+							long messageReceivedLastPeriod = 0;
+							long bytesReceivedLastPeriod = 0;
 							while (true) {
 								if (!serialPortConnected) {
 									throw new Exception("Serial device is not connected!");
 								}
 								if (verbose.length > 0) {
-									System.out.println("Sent\t" + messagesSent + "\tmessages (" + bytesSent + " bytes)");
-									System.out.println("Received\t" + messagesReceived + "\tmessages (" + bytesReceived + " bytes)");
+//									long sentMPS = messagesSent - messagesSentLastPeriod;
+//									long receivedMPS = messagesReceived - messageReceivedLastPeriod;
+									long sentBPS = bytesSent - bytesSentLastPeriod;
+									long receivedBPS = bytesReceived - bytesReceivedLastPeriod;
+									messagesSentLastPeriod = messagesSent;
+									bytesSentLastPeriod = bytesSent;
+									messageReceivedLastPeriod = messagesReceived;
+									bytesReceivedLastPeriod = bytesReceived;
+									System.out.println("Sent\t" + messagesSent + "\tmessages ("
+											+ humanReadableByteCount(sentBPS, false) + " sec. "
+											+ humanReadableByteCount(bytesSent, false) + " total)");
+									System.out.println("Recv\t" + messagesReceived + "\tmessages ("
+											+ humanReadableByteCount(receivedBPS, false) + " sec. "
+											+ humanReadableByteCount(bytesReceived, false) + " total)");
 								}
 								Thread.sleep(1000);
 							}
@@ -248,6 +265,15 @@ public class Trestle implements Runnable {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+	public static String humanReadableByteCount(long bytes, boolean si) {
+		int unit = si ? 1000 : 1024;
+		if (bytes < unit)
+			return bytes + " B";
+		int exp = (int) (Math.log(bytes) / Math.log(unit));
+		String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp - 1) + (si ? "" : "i");
+		return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
 	}
 
 	/**
